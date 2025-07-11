@@ -364,9 +364,9 @@ export class BehaviorTracker {
     const formData = new FormData(form)
     const data: Record<string, any> = {}
     
-    formData.forEach((value, key) => {
+    for (const [key, value] of formData.entries()) {
       data[key] = value
-    })
+    }
     
     return data
   }

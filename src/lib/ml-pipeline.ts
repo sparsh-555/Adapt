@@ -430,7 +430,7 @@ export class MLPipeline {
   }
 
   private calculateConfidence(prediction: tf.Tensor): number {
-    const probabilities = Array.from(prediction.dataSync())
+    const probabilities = prediction.dataSync()
     const maxProbability = Math.max(...probabilities)
     
     // Confidence is based on how certain the model is
@@ -438,7 +438,7 @@ export class MLPipeline {
   }
 
   private getBehaviorType(prediction: tf.Tensor): string {
-    const probabilities = Array.from(prediction.dataSync())
+    const probabilities = prediction.dataSync()
     const maxIndex = probabilities.indexOf(Math.max(...probabilities))
     
     const behaviorTypes = [
@@ -453,7 +453,7 @@ export class MLPipeline {
     return behaviorTypes[maxIndex] || 'average'
   }
 
-  private convertToAdaptations(scores: Float32Array | Uint8Array | Int32Array, userProfile: UserProfile): Adaptation[] {
+  private convertToAdaptations(scores: Float32Array, userProfile: UserProfile): Adaptation[] {
     const adaptations: Adaptation[] = []
     const adaptationTypes = [
       'field_reorder',
@@ -462,7 +462,7 @@ export class MLPipeline {
       'contextual_help'
     ]
     
-    Array.from(scores).forEach((score, index) => {
+    scores.forEach((score, index) => {
       if (score > 0.5) { // Threshold for recommendation
         adaptations.push({
           id: `ml_${userProfile.sessionId}_${Date.now()}_${index}`,

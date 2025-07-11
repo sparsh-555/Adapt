@@ -185,8 +185,8 @@ function calculateBehaviorDistribution(profiles: any[]) {
   
   return Object.entries(behaviorCounts).map(([type, count]) => ({
     type: formatBehaviorType(type),
-    count: count as number,
-    percentage: total > 0 ? Math.round(((count as number) / total) * 100) : 0
+    count,
+    percentage: total > 0 ? Math.round((count / total) * 100) : 0
   }))
 }
 
