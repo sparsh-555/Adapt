@@ -14,7 +14,7 @@ export default function Home() {
           <div className="bg-slate-900 text-white p-4 rounded-lg font-mono text-sm mb-8 max-w-2xl mx-auto">
             <div className="text-slate-400">// Add to your form</div>
             <div>&lt;form data-adapt="signup" data-goal="conversion"&gt;</div>
-            <div className="text-slate-400">  &lt;!-- Your existing form --&gt;</div>
+            <div className="text-slate-400">  &lt;!{'-'}- Your existing form --&gt;</div>
             <div>&lt;/form&gt;</div>
           </div>
           

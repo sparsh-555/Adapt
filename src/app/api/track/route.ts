@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Analyze user behavior and generate adaptations
-    const adaptations = await generateAdaptations(event)
+    const adaptations: any[] = await generateAdaptations(event)
 
     // Update user profile if significant change
     await updateUserProfile(event.sessionId, event.formId, adaptations)
@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generateAdaptations(event: BehaviorEvent) {
-  const adaptations = []
+async function generateAdaptations(event: BehaviorEvent): Promise<any[]> {
+  const adaptations: any[] = []
 
   // Get recent behavior events for this session
   const { data: recentEvents } = await supabase
@@ -143,7 +143,7 @@ function analyzeBehaviorPatterns(events: any[]) {
     isErrorProne: false,
     isSpeedRunner: false,
     needsFieldReordering: false,
-    optimizedFieldOrder: [],
+    optimizedFieldOrder: [] as string[],
     confidence: 0
   }
 

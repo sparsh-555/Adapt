@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@tensorflow/tfjs-node'],
-  },
+  serverExternalPackages: ['@tensorflow/tfjs-node'],
   headers: async () => [
     {
       source: '/api/adapt-script/:path*',
