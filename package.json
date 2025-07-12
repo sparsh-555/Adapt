@@ -1,0 +1,76 @@
+{
+  "name": "adapt",
+  "version": "0.1.0",
+  "description": "AI-native form optimization platform - Phase 1 implementation",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "npm run type-check && npm run lint",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:prod": "./scripts/deploy.sh production",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset",
+    "supabase:push": "npx supabase db push",
+    "supabase:pull": "npx supabase db pull",
+    "supabase:status": "npx supabase status",
+    "vercel:env": "vercel env pull .env.local",
+    "vercel:logs": "vercel logs",
+    "setup": "npm install && cp .env.example .env.local"
+  },
+  "dependencies": {
+    "next": "^15.1.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "@supabase/realtime-js": "^2.9.5",
+    "@tensorflow/tfjs": "^4.21.0",
+    "@tensorflow/tfjs-node": "^4.21.0",
+    "ws": "^8.18.0",
+    "uuid": "^10.0.0",
+    "lodash": "^4.17.21",
+    "zod": "^3.23.8",
+    "date-fns": "^4.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/ws": "^8.5.13",
+    "@types/uuid": "^10.0.0",
+    "@types/lodash": "^4.17.13",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "prettier": "^3.4.2",
+    "supabase": "^1.207.7"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sparshjain/Adapt.git"
+  },
+  "keywords": [
+    "ai",
+    "form-optimization",
+    "machine-learning",
+    "real-time",
+    "conversion-optimization",
+    "nextjs",
+    "supabase",
+    "tensorflow"
+  ],
+  "author": "Sparsh Jain",
+  "license": "MIT"
+}

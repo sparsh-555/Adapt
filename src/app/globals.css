@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+/* Adapt-specific styles */
+.adapt-loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.adapt-hidden {
+  display: none !important;
+}
+
+.adapt-highlight {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.adapt-smooth-transition {
+  transition: all 300ms ease-out;
+}
+
+/* Form field adaptations */
+.adapt-field-reorder {
+  transform: translateY(0);
+  transition: transform 300ms ease-out;
+}
+
+.adapt-progressive-disclosure {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 300ms ease-out, max-height 300ms ease-out;
+}
+
+.adapt-progressive-disclosure.revealed {
+  opacity: 1;
+  max-height: 200px;
+}
