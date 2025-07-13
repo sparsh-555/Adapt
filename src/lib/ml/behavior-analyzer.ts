@@ -1,5 +1,4 @@
 import { BehaviorEvent, UserProfile } from '@/types'
-import { debounce } from '@/utils'
 
 export interface BehaviorPattern {
   type: 'hesitation' | 'error_prone' | 'fast_user' | 'mobile_user' | 'accessibility_user' | 'repeat_visitor'
@@ -198,7 +197,11 @@ export class BehaviorAnalyzer {
     
     const intervals = []
     for (let i = 1; i < inputEvents.length; i++) {
-      intervals.push(inputEvents[i].timestamp - inputEvents[i - 1].timestamp)
+      const current = inputEvents[i]
+      const previous = inputEvents[i - 1]
+      if (current && previous) {
+        intervals.push(current.timestamp - previous.timestamp)
+      }
     }
     
     const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
@@ -232,7 +235,7 @@ export class BehaviorAnalyzer {
   private detectDevicePattern(events: BehaviorEvent[]): BehaviorPattern | null {
     if (events.length === 0) return null
     
-    const userAgent = events[0].userAgent
+    const userAgent = events[0]?.userAgent || ''
     const isMobile = /mobile|android|iphone|ipad/i.test(userAgent)
     const isTablet = /tablet|ipad/i.test(userAgent)
     
@@ -299,18 +302,17 @@ export class BehaviorAnalyzer {
    * Detect return visitor patterns
    */
   private detectReturnVisitorPattern(userProfile?: UserProfile): BehaviorPattern | null {
-    if (!userProfile || !userProfile.sessionCount) return null
+    if (!userProfile) return null
     
-    if (userProfile.sessionCount > 1) {
-      const confidence = Math.min(userProfile.sessionCount / 5, 0.9)
-      
+    // Check if user has high confidence score indicating established patterns
+    if (userProfile.confidenceScore > 0.7) {
       return {
         type: 'repeat_visitor',
-        confidence,
+        confidence: userProfile.confidenceScore,
         evidence: [
-          `${userProfile.sessionCount} previous sessions`,
-          `First visit: ${new Date(userProfile.createdAt).toLocaleDateString()}`,
-          `Returning user with established patterns`,
+          `High confidence score: ${userProfile.confidenceScore}`,
+          `Established behavior type: ${userProfile.behaviorType}`,
+          `Consistent interaction patterns`,
         ],
         recommendations: [
           'Pre-fill known information',
@@ -366,7 +368,9 @@ export class BehaviorAnalyzer {
       if (fieldEvents.length > 0) {
         const firstEvent = fieldEvents[0]
         const lastEvent = fieldEvents[fieldEvents.length - 1]
-        analysis.timeSpent = lastEvent.timestamp - firstEvent.timestamp
+        if (firstEvent && lastEvent) {
+          analysis.timeSpent = lastEvent.timestamp - firstEvent.timestamp
+        }
         
         // Calculate difficulty score based on multiple factors
         analysis.difficultyScore = this.calculateFieldDifficulty(
@@ -389,7 +393,11 @@ export class BehaviorAnalyzer {
   private calculateEngagementLevel(events: BehaviorEvent[]): 'low' | 'medium' | 'high' {
     if (events.length === 0) return 'low'
     
-    const sessionDuration = events[events.length - 1].timestamp - events[0].timestamp
+    const firstEvent = events[0]
+    const lastEvent = events[events.length - 1]
+    if (!firstEvent || !lastEvent) return 'low'
+    
+    const sessionDuration = lastEvent.timestamp - firstEvent.timestamp
     const eventsPerMinute = (events.length / sessionDuration) * 60000
     const interactionTypes = new Set(events.map(e => e.eventType)).size
     
@@ -475,8 +483,8 @@ export class BehaviorAnalyzer {
     }
     
     // Adjust based on engagement
-    const sessionDuration = events.length > 0 ? 
-      events[events.length - 1].timestamp - events[0].timestamp : 0
+    const sessionDuration = events.length > 0 && events[0] && events[events.length - 1] ? 
+      events[events.length - 1]!.timestamp - events[0]!.timestamp : 0
     
     if (sessionDuration > 300000) { // More than 5 minutes
       likelihood -= 0.1 // Longer sessions might indicate struggle
@@ -537,8 +545,8 @@ export class BehaviorAnalyzer {
       }
     })
     
-    const sessionDuration = events.length > 0 ? 
-      events[events.length - 1].timestamp - events[0].timestamp : 0
+    const sessionDuration = events.length > 0 && events[0] && events[events.length - 1] ? 
+      events[events.length - 1]!.timestamp - events[0]!.timestamp : 0
     
     if (sessionDuration > 600000) { // 10+ minutes
       riskFactors.push('Extended session duration suggests user difficulty')
@@ -568,8 +576,8 @@ export class BehaviorAnalyzer {
     
     const inputEvents = events.filter(e => e.eventType === 'field_change')
     if (inputEvents.length > 0) {
-      const avgTime = events.length > 1 ? 
-        (events[events.length - 1].timestamp - events[0].timestamp) / inputEvents.length : 0
+      const avgTime = events.length > 1 && events[0] && events[events.length - 1] ? 
+        (events[events.length - 1]!.timestamp - events[0]!.timestamp) / inputEvents.length : 0
       
       if (avgTime < 5000) { // Less than 5s per field
         strengths.push('Quick field completion indicates user confidence')

@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs'
-import { BehaviorEvent, FormAdaptation, UserProfile } from '@/types'
+import { BehaviorEvent, UserProfile } from '@/types'
 import { createAdaptError } from '@/utils'
 
 export interface MLInferenceConfig {
@@ -57,9 +57,7 @@ export class MLInferenceEngine {
   async initialize(): Promise<void> {
     try {
       // Check if we're in Edge Runtime environment
-      const isEdgeRuntime = typeof EdgeRuntime !== 'undefined' || 
-                           (typeof global !== 'undefined' && global.EdgeRuntime) ||
-                           (typeof process !== 'undefined' && process.env.VERCEL_REGION)
+      const isEdgeRuntime = (typeof process !== 'undefined' && process.env.VERCEL_REGION)
       
       if (isEdgeRuntime) {
         // Skip TensorFlow.js initialization in Edge Runtime
@@ -191,7 +189,7 @@ export class MLInferenceEngine {
    */
   extractBehaviorFeatures(
     events: BehaviorEvent[],
-    profile: UserProfile | null = null
+    _profile: UserProfile | null = null
   ): BehaviorFeatures {
     if (events.length === 0) {
       return this.getDefaultFeatures()
@@ -255,8 +253,8 @@ export class MLInferenceEngine {
    */
   async generateAdaptations(
     features: BehaviorFeatures,
-    formId: string,
-    sessionId: string
+    _formId: string,
+    _sessionId: string
   ): Promise<AdaptationPrediction[]> {
     if (!this.isInitialized || !this.adaptationModel) {
       throw createAdaptError(
@@ -277,7 +275,7 @@ export class MLInferenceEngine {
       const adaptations = this.interpretPredictions(
         Array.from(predictionData),
         features,
-        formId
+        _formId
       )
 
       // Cleanup tensors
@@ -341,7 +339,7 @@ export class MLInferenceEngine {
   private interpretPredictions(
     predictions: number[],
     features: BehaviorFeatures,
-    formId: string
+    _formId: string
   ): AdaptationPrediction[] {
     const adaptationTypes = [
       'field_reordering',
@@ -359,13 +357,13 @@ export class MLInferenceEngine {
     predictions.forEach((confidence, index) => {
       const adaptationType = adaptationTypes[index]
       
-      if (confidence > this.config.confidenceThreshold!) {
+      if (confidence > this.config.confidenceThreshold! && adaptationType) {
         adaptations.push(
           this.createAdaptationPrediction(
             adaptationType,
             confidence,
             features,
-            formId
+            _formId
           )
         )
       }
@@ -384,12 +382,11 @@ export class MLInferenceEngine {
     type: string,
     confidence: number,
     features: BehaviorFeatures,
-    formId: string
+    _formId: string
   ): AdaptationPrediction {
     const baseAdaptation = {
       type,
       confidence,
-      targetField: undefined,
       parameters: {},
       explanation: '',
     }
@@ -458,7 +455,10 @@ export class MLInferenceEngine {
 
   private calculateTypingSpeed(events: BehaviorEvent[]): number {
     if (events.length < 2) return 0.5
-    const timeSpan = events[events.length - 1].timestamp - events[0].timestamp
+    const firstEvent = events[0]
+    const lastEvent = events[events.length - 1]
+    if (!firstEvent || !lastEvent) return 0.5
+    const timeSpan = lastEvent.timestamp - firstEvent.timestamp
     return Math.min((events.length / (timeSpan / 1000)) * 60, 100) / 100 // WPM normalized
   }
 
@@ -467,7 +467,11 @@ export class MLInferenceEngine {
     if (events.length < 2) return 0
     const intervals = []
     for (let i = 1; i < events.length; i++) {
-      intervals.push(events[i].timestamp - events[i - 1].timestamp)
+      const current = events[i]
+      const previous = events[i - 1]
+      if (current && previous) {
+        intervals.push(current.timestamp - previous.timestamp)
+      }
     }
     return intervals.reduce((a, b) => a + b, 0) / intervals.length
   }
@@ -483,7 +487,10 @@ export class MLInferenceEngine {
 
   private calculateFormCompletionTime(events: BehaviorEvent[]): number {
     if (events.length < 2) return 0
-    return events[events.length - 1].timestamp - events[0].timestamp
+    const firstEvent = events[0]
+    const lastEvent = events[events.length - 1]
+    if (!firstEvent || !lastEvent) return 0
+    return lastEvent.timestamp - firstEvent.timestamp
   }
 
   private calculateScrollBehavior(events: BehaviorEvent[]): number {
@@ -494,7 +501,7 @@ export class MLInferenceEngine {
   private calculateFieldFocusSequence(events: BehaviorEvent[]): number[] {
     return events
       .filter(e => e.fieldName)
-      .map((e, index) => index)
+      .map((_e, index) => index)
       .slice(0, 10) // Limit sequence length
   }
 
@@ -511,7 +518,10 @@ export class MLInferenceEngine {
 
   private calculateSessionDuration(events: BehaviorEvent[]): number {
     if (events.length < 2) return 0
-    return events[events.length - 1].timestamp - events[0].timestamp
+    const firstEvent = events[0]
+    const lastEvent = events[events.length - 1]
+    if (!firstEvent || !lastEvent) return 0
+    return lastEvent.timestamp - firstEvent.timestamp
   }
 
   private calculateVariance(sequence: number[]): number {

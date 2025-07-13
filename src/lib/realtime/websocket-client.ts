@@ -1,5 +1,5 @@
 import { WebSocketMessage, BehaviorEvent, FormAdaptation } from '@/types'
-import { createAdaptError, debounce } from '@/utils'
+import { createAdaptError } from '@/utils'
 
 export interface WebSocketClientConfig {
   url: string
@@ -345,7 +345,7 @@ export class RealtimeEventProcessor {
     const wsConfig: WebSocketClientConfig = {
       url: config.apiUrl,
       sessionId: this.sessionId,
-      debugging: config.debugging,
+      ...(config.debugging !== undefined && { debugging: config.debugging }),
     }
 
     const handlers: WebSocketEventHandlers = {

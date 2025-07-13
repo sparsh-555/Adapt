@@ -16,9 +16,16 @@ export interface FormAdaptation {
   id?: string
   sessionId: string
   formId: string
-  adaptationType: 'field_reorder' | 'progressive_disclosure' | 'context_switching' | 'error_prevention'
-  config: AdaptationConfig
-  appliedAt: number
+  adaptationType: 'field_reordering' | 'progressive_disclosure' | 'context_switching' | 'error_prevention' | 'completion_guidance' | 'validation_timing' | 'visual_emphasis'
+  confidence: number
+  parameters?: Record<string, unknown>
+  config?: AdaptationConfig
+  cssChanges?: Record<string, string>
+  jsChanges?: string
+  appliedAt: string | number
+  isActive?: boolean
+  description?: string
+  metadata?: Record<string, unknown>
   performanceImpact?: PerformanceMetrics
 }
 
@@ -30,16 +37,37 @@ export interface AdaptationConfig {
   progressiveDisclosure?: {
     fieldsToReveal: string[]
     triggerConditions: string[]
+    initialFields?: number
+    strategy?: string
   }
   contextSwitching?: {
     showFields: string[]
     hideFields: string[]
     conditions: Record<string, unknown>
+    mobileOptimized?: boolean
+    reducedFields?: boolean
   }
   errorPrevention?: {
     fieldName: string
     validationRules: ValidationRule[]
     helpText: string
+    enableRealTimeValidation?: boolean
+    enableInlineHelp?: boolean
+  }
+  completionGuidance?: {
+    showProgress?: boolean
+    confirmationMessages?: boolean
+  }
+  validationTiming?: {
+    delay?: number
+    enableRealTimeValidation?: boolean
+    validationStrategy?: 'immediate' | 'debounced' | 'onBlur'
+  }
+  visualEmphasis?: {
+    highlightColor?: string
+    borderWidth?: string
+    animationDuration?: number
+    emphasisType?: 'border' | 'background' | 'shadow' | 'pulse'
   }
 }
 
@@ -200,8 +228,11 @@ export interface AdaptClient {
 }
 
 export interface DOMAdapter {
+  applyAdaptation(adaptation: FormAdaptation): Promise<void>
   applyFieldReordering(adaptation: FormAdaptation): Promise<void>
   applyProgressiveDisclosure(adaptation: FormAdaptation): Promise<void>
   applyContextSwitching(adaptation: FormAdaptation): Promise<void>
   applyErrorPrevention(adaptation: FormAdaptation): Promise<void>
+  applyCompletionGuidance(adaptation: FormAdaptation): Promise<void>
+  destroy(): void
 }

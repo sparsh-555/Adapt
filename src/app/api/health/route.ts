@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
 
 // Configure the Edge Runtime
@@ -20,7 +20,7 @@ export async function OPTIONS() {
 }
 
 // Health check endpoint
-export async function GET(request: NextRequest) {
+export async function GET() {
   const startTime = Date.now()
   const checks: Record<string, any> = {}
   
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       const dbStart = Date.now()
       
       // Simple query to test connection
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('behavior_events')
         .select('id')
         .limit(1)

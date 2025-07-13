@@ -1,3 +1,5 @@
+import { RealtimeEventProcessor } from './websocket-client'
+
 export { 
   AdaptWebSocketClient, 
   RealtimeEventProcessor 
@@ -24,7 +26,7 @@ export async function createRealtimeConnection(config: {
   const processor = new RealtimeEventProcessor(config.sessionId)
   await processor.initialize({
     apiUrl: config.apiUrl,
-    debugging: config.debugging,
+    ...(config.debugging !== undefined && { debugging: config.debugging }),
   })
   return processor
 }

@@ -148,7 +148,7 @@ export class AdaptationGenerator {
       id: generateId(),
       sessionId: context.sessionId,
       formId: context.formId,
-      adaptationType: prediction.type,
+      adaptationType: prediction.type as FormAdaptation['adaptationType'],
       confidence: prediction.confidence,
       appliedAt: new Date().toISOString(),
       isActive: true,
@@ -208,9 +208,7 @@ export class AdaptationGenerator {
         ),
       },
       cssChanges: {
-        '.form-field': {
-          order: 'var(--field-order)',
-        },
+        '.form-field': 'order: var(--field-order)',
       },
       jsChanges: `
         // Reorder form fields based on user behavior
@@ -248,24 +246,9 @@ export class AdaptationGenerator {
         animationDuration: 300,
       },
       cssChanges: {
-        '.form-field.hidden-step': {
-          display: 'none',
-          opacity: '0',
-          transition: 'opacity 0.3s ease-in-out',
-        },
-        '.form-field.visible-step': {
-          display: 'block',
-          opacity: '1',
-        },
-        '.show-more-button': {
-          padding: '10px 20px',
-          backgroundColor: '#007bff',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          margin: '10px 0',
-        },
+        '.form-field.hidden-step': 'display: none; opacity: 0; transition: opacity 0.3s ease-in-out',
+        '.form-field.visible-step': 'display: block; opacity: 1',
+        '.show-more-button': 'padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 10px 0',
       },
       jsChanges: `
         // Implement progressive disclosure
@@ -324,26 +307,10 @@ export class AdaptationGenerator {
         validationDelay: 500,
       },
       cssChanges: {
-        '.field-error': {
-          color: '#dc3545',
-          fontSize: '0.875rem',
-          marginTop: '0.25rem',
-        },
-        '.field-valid': {
-          borderColor: '#28a745',
-        },
-        '.field-invalid': {
-          borderColor: '#dc3545',
-        },
-        '.input-suggestion': {
-          position: 'absolute',
-          backgroundColor: 'white',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          maxHeight: '200px',
-          overflowY: 'auto',
-          zIndex: 1000,
-        },
+        '.field-error': 'color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem',
+        '.field-valid': 'border-color: #28a745',
+        '.field-invalid': 'border-color: #dc3545',
+        '.input-suggestion': 'position: absolute; background-color: white; border: 1px solid #ccc; border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 1000',
       },
       jsChanges: `
         // Implement error prevention
@@ -435,36 +402,10 @@ export class AdaptationGenerator {
         enableExamples: prediction.parameters.enableExamples,
       },
       cssChanges: {
-        '.help-tooltip': {
-          position: 'relative',
-          display: 'inline-block',
-          cursor: 'help',
-        },
-        '.help-tooltip .tooltip-text': {
-          visibility: 'hidden',
-          width: '200px',
-          backgroundColor: '#333',
-          color: 'white',
-          textAlign: 'center',
-          borderRadius: '6px',
-          padding: '5px',
-          position: 'absolute',
-          zIndex: 1,
-          bottom: '125%',
-          left: '50%',
-          marginLeft: '-100px',
-          opacity: 0,
-          transition: 'opacity 0.3s',
-        },
-        '.help-tooltip:hover .tooltip-text': {
-          visibility: 'visible',
-          opacity: 1,
-        },
-        '.inline-help': {
-          fontSize: '0.875rem',
-          color: '#6c757d',
-          marginTop: '0.25rem',
-        },
+        '.help-tooltip': 'position: relative; display: inline-block; cursor: help',
+        '.help-tooltip .tooltip-text': 'visibility: hidden; width: 200px; background-color: #333; color: white; text-align: center; border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s',
+        '.help-tooltip:hover .tooltip-text': 'visibility: visible; opacity: 1',
+        '.inline-help': 'font-size: 0.875rem; color: #6c757d; margin-top: 0.25rem',
       },
       jsChanges: `
         // Add contextual help
@@ -545,17 +486,13 @@ export class AdaptationGenerator {
   // Simplified implementations for other adaptation types
   private createVisualEmphasisAdaptation(
     base: Partial<FormAdaptation>,
-    prediction: AdaptationPrediction,
-    context: AdaptationContext
+    _prediction: AdaptationPrediction,
+    _context: AdaptationContext
   ): FormAdaptation {
     return {
       ...base,
       cssChanges: {
-        '.form-field.emphasized': {
-          borderWidth: '2px',
-          borderColor: '#007bff',
-          backgroundColor: '#f8f9fa',
-        },
+        '.form-field.emphasized': 'border-width: 2px; border-color: #007bff; background-color: #f8f9fa',
       },
       description: 'Emphasize important fields based on user behavior',
     } as FormAdaptation
@@ -563,17 +500,13 @@ export class AdaptationGenerator {
 
   private createInputAssistanceAdaptation(
     base: Partial<FormAdaptation>,
-    prediction: AdaptationPrediction,
-    context: AdaptationContext
+    _prediction: AdaptationPrediction,
+    _context: AdaptationContext
   ): FormAdaptation {
     return {
       ...base,
       cssChanges: {
-        '.input-assistance': {
-          fontSize: '0.875rem',
-          color: '#28a745',
-          marginTop: '0.25rem',
-        },
+        '.input-assistance': 'font-size: 0.875rem; color: #28a745; margin-top: 0.25rem',
       },
       description: 'Provide input assistance for complex fields',
     } as FormAdaptation
@@ -582,7 +515,7 @@ export class AdaptationGenerator {
   private createValidationTimingAdaptation(
     base: Partial<FormAdaptation>,
     prediction: AdaptationPrediction,
-    context: AdaptationContext
+    _context: AdaptationContext
   ): FormAdaptation {
     return {
       ...base,
@@ -595,25 +528,14 @@ export class AdaptationGenerator {
 
   private createCompletionGuidanceAdaptation(
     base: Partial<FormAdaptation>,
-    prediction: AdaptationPrediction,
-    context: AdaptationContext
+    _prediction: AdaptationPrediction,
+    _context: AdaptationContext
   ): FormAdaptation {
     return {
       ...base,
       cssChanges: {
-        '.completion-progress': {
-          width: '100%',
-          backgroundColor: '#e9ecef',
-          borderRadius: '4px',
-          height: '8px',
-          marginBottom: '20px',
-        },
-        '.completion-progress-bar': {
-          height: '100%',
-          backgroundColor: '#28a745',
-          borderRadius: '4px',
-          transition: 'width 0.3s ease',
-        },
+        '.completion-progress': 'width: 100%; background-color: #e9ecef; border-radius: 4px; height: 8px; margin-bottom: 20px',
+        '.completion-progress-bar': 'height: 100%; background-color: #28a745; border-radius: 4px; transition: width 0.3s ease',
       },
       description: 'Show form completion progress to encourage completion',
     } as FormAdaptation
@@ -669,7 +591,7 @@ export class AdaptationGenerator {
 
   private removeConflictingAdaptations(
     adaptations: FormAdaptation[],
-    context: AdaptationContext
+    _context: AdaptationContext
   ): FormAdaptation[] {
     const conflictGroups = [
       ['field_reordering', 'progressive_disclosure'],

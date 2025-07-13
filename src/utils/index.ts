@@ -127,7 +127,11 @@ export const calculateTypingSpeed = (
 ): number => {
   if (keyEvents.length < 2) return 0
   
-  const totalTime = keyEvents[keyEvents.length - 1].timestamp - keyEvents[0].timestamp
+  const firstEvent = keyEvents[0]
+  const lastEvent = keyEvents[keyEvents.length - 1]
+  if (!firstEvent || !lastEvent) return 0
+  
+  const totalTime = lastEvent.timestamp - firstEvent.timestamp
   const charactersTyped = keyEvents.filter(e => e.key.length === 1).length
   
   return totalTime > 0 ? (charactersTyped / totalTime) * 60000 : 0 // WPM
@@ -139,11 +143,16 @@ export const detectCorrectionPattern = (
   let corrections = 0
   
   for (let i = 1; i < inputEvents.length; i++) {
-    const current = inputEvents[i].value
-    const previous = inputEvents[i - 1].value
+    const currentEvent = inputEvents[i]
+    const previousEvent = inputEvents[i - 1]
     
-    if (current.length < previous.length) {
-      corrections++
+    if (currentEvent && previousEvent) {
+      const current = currentEvent.value
+      const previous = previousEvent.value
+      
+      if (current.length < previous.length) {
+        corrections++
+      }
     }
   }
   

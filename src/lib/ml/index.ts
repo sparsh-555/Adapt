@@ -114,7 +114,7 @@ export class AdaptMLManager {
     const adaptationContext = {
       formId,
       sessionId,
-      userId: userProfile?.id,
+      ...(userProfile?.id && { userId: userProfile.id }),
       deviceType: context.deviceType,
       formElements: context.formElements,
       currentAdaptations: context.currentAdaptations,
@@ -232,7 +232,17 @@ export function getQuickInsights(
     }
   }
 
-  const sessionDuration = events[events.length - 1].timestamp - events[0].timestamp
+  const firstEvent = events[0]
+  const lastEvent = events[events.length - 1]
+  if (!firstEvent || !lastEvent) {
+    return {
+      userType: 'new',
+      riskLevel: 'low',
+      recommendations: ['Insufficient data'],
+    }
+  }
+  
+  const sessionDuration = lastEvent.timestamp - firstEvent.timestamp
   const eventsPerSecond = events.length / (sessionDuration / 1000)
   
   const keyEvents = events.filter(e => e.eventType === 'key_press')

@@ -91,7 +91,7 @@ export class SupabaseRealtimeManager {
 
     const subscriptionResult = await channel.subscribe()
     
-    if (subscriptionResult === 'SUBSCRIBED') {
+    if (subscriptionResult && subscriptionResult.toString() === 'SUBSCRIBED') {
       this.channels.set(channelName, channel)
       if (this.config.debugging) {
         console.log(`Subscribed to ${channelName}`)
@@ -124,7 +124,7 @@ export class SupabaseRealtimeManager {
 
     const subscriptionResult = await channel.subscribe()
     
-    if (subscriptionResult === 'SUBSCRIBED') {
+    if (subscriptionResult && subscriptionResult.toString() === 'SUBSCRIBED') {
       this.channels.set(channelName, channel)
       if (this.config.debugging) {
         console.log(`Subscribed to ${channelName}`)
@@ -162,7 +162,7 @@ export class SupabaseRealtimeManager {
 
     const subscriptionResult = await channel.subscribe()
     
-    if (subscriptionResult === 'SUBSCRIBED') {
+    if (subscriptionResult && subscriptionResult.toString() === 'SUBSCRIBED') {
       this.channels.set(channelName, channel)
       if (this.config.debugging) {
         console.log(`Subscribed to ${channelName}`)
@@ -200,7 +200,7 @@ export class SupabaseRealtimeManager {
 
     const subscriptionResult = await channel.subscribe()
     
-    if (subscriptionResult === 'SUBSCRIBED') {
+    if (subscriptionResult && subscriptionResult.toString() === 'SUBSCRIBED') {
       this.channels.set(channelName, channel)
       if (this.config.debugging) {
         console.log(`Subscribed to ${channelName}`)
@@ -238,7 +238,7 @@ export class SupabaseRealtimeManager {
 
     const subscriptionResult = await channel.subscribe()
     
-    if (subscriptionResult === 'SUBSCRIBED') {
+    if (subscriptionResult && subscriptionResult.toString() === 'SUBSCRIBED') {
       this.channels.set(channelName, channel)
       if (this.config.debugging) {
         console.log(`Subscribed to ${channelName}`)

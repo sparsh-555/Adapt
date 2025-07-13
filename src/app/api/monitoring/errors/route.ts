@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/client'
-import { createAdaptError } from '@/utils'
 
 // Configure the Edge Runtime
 export const runtime = 'edge'

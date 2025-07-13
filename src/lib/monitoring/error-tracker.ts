@@ -1,4 +1,3 @@
-import { createAdaptError } from '@/utils'
 
 export interface ErrorContext {
   userId?: string
@@ -6,7 +5,7 @@ export interface ErrorContext {
   formId?: string
   userAgent?: string
   url?: string
-  timestamp?: number
+  timestamp: number
   severity: 'low' | 'medium' | 'high' | 'critical'
   tags?: Record<string, string>
   extra?: Record<string, any>
@@ -57,8 +56,8 @@ export class ErrorTracker {
       sessionId: this.sessionId,
       timestamp: Date.now(),
       severity: 'medium',
-      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
-      url: typeof window !== 'undefined' ? window.location.href : undefined,
+      ...(typeof window !== 'undefined' && window.navigator.userAgent && { userAgent: window.navigator.userAgent }),
+      ...(typeof window !== 'undefined' && window.location.href && { url: window.location.href }),
       ...context,
     }
 

@@ -33,9 +33,7 @@ export const mockFormAdaptation = (overrides: Partial<FormAdaptation> = {}): For
     strategy: 'efficiency',
   },
   cssChanges: {
-    '.form-field.hidden': {
-      display: 'none',
-    },
+    '.form-field.hidden': 'display: none',
   },
   jsChanges: 'console.log("Test adaptation applied");',
   appliedAt: new Date().toISOString(),
@@ -63,9 +61,7 @@ export const mockUserProfile = (overrides: Partial<UserProfile> = {}): UserProfi
     errorPatterns: [],
     completionRate: 0.85,
   },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  sessionCount: 1,
+  updatedAt: Date.now(),
   ...overrides,
 })
 
@@ -398,7 +394,16 @@ export const debugUtils = {
     }
 
     const sortedEvents = events.sort((a, b) => a.timestamp - b.timestamp)
-    const duration = sortedEvents[sortedEvents.length - 1].timestamp - sortedEvents[0].timestamp
+    const firstEvent = sortedEvents[0]
+    const lastEvent = sortedEvents[sortedEvents.length - 1]
+    if (!firstEvent || !lastEvent) return {
+      duration: 0,
+      eventCount: 0,
+      fieldsInteracted: 0,
+      errorRate: 0,
+      avgTimeBetweenEvents: 0,
+    }
+    const duration = lastEvent.timestamp - firstEvent.timestamp
     const fieldsInteracted = new Set(events.map(e => e.fieldName).filter(Boolean)).size
     const errorEvents = events.filter(e => 
       e.eventType === 'key_press' && e.data?.key === 'Backspace'
@@ -407,7 +412,11 @@ export const debugUtils = {
 
     let totalTimeBetween = 0
     for (let i = 1; i < sortedEvents.length; i++) {
-      totalTimeBetween += sortedEvents[i].timestamp - sortedEvents[i - 1].timestamp
+      const current = sortedEvents[i]
+      const previous = sortedEvents[i - 1]
+      if (current && previous) {
+        totalTimeBetween += current.timestamp - previous.timestamp
+      }
     }
     const avgTimeBetweenEvents = totalTimeBetween / (sortedEvents.length - 1)
 

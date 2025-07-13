@@ -1,4 +1,6 @@
-// Export error tracking functionality
+// Import and export error tracking functionality
+import { initializeErrorTracking, trackMetric, trackError, getErrorTracker } from './error-tracker'
+
 export {
   ErrorTracker,
   initializeErrorTracking,
@@ -87,19 +89,21 @@ export function initializeMonitoring(sessionId: string): void {
       if (navEntries.length > 0) {
         const nav = navEntries[0]
         
-        trackMetric({
-          name: 'dom_content_loaded',
-          value: nav.domContentLoadedEventEnd - nav.domContentLoadedEventStart,
-          unit: 'ms',
-          tags: { session_id: sessionId },
-        })
-        
-        trackMetric({
-          name: 'first_byte_time',
-          value: nav.responseStart - nav.requestStart,
-          unit: 'ms',
-          tags: { session_id: sessionId },
-        })
+        if (nav) {
+          trackMetric({
+            name: 'dom_content_loaded',
+            value: nav.domContentLoadedEventEnd - nav.domContentLoadedEventStart,
+            unit: 'ms',
+            tags: { session_id: sessionId },
+          })
+          
+          trackMetric({
+            name: 'first_byte_time',
+            value: nav.responseStart - nav.requestStart,
+            unit: 'ms',
+            tags: { session_id: sessionId },
+          })
+        }
       }
     }
   }
@@ -133,7 +137,7 @@ export function initializeMonitoring(sessionId: string): void {
 }
 
 // Utility function to create a monitoring wrapper for API calls
-export function createMonitoredFetch(sessionId: string) {
+export function createMonitoredFetch(_sessionId: string) {
   return async function monitoredFetch(
     input: RequestInfo | URL,
     init?: RequestInit
@@ -212,9 +216,10 @@ export function setupPerformanceObserver(sessionId: string): void {
     // Observe first input delay
     const fidObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
+        const fidEntry = entry as any // First Input Delay entry
         trackMetric({
           name: 'first_input_delay',
-          value: entry.processingStart - entry.startTime,
+          value: fidEntry.processingStart - fidEntry.startTime,
           unit: 'ms',
           tags: { session_id: sessionId },
         })

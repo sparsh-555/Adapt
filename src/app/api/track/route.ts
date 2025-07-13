@@ -13,7 +13,7 @@ import {
   classifyUserBehavior,
   createAdaptError 
 } from '@/utils'
-import { getMLManager, getQuickInsights } from '@/lib/ml'
+import { getQuickInsights } from '@/lib/ml'
 
 // Configure the Edge Runtime
 export const runtime = 'edge'
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient()
 
     // Process events and generate adaptations
-    const response = await processEvents(supabase, validatedEvents, request)
+    const response = await processEvents(supabase, validatedEvents)
 
     return NextResponse.json(response, {
       status: 200,
@@ -103,8 +103,7 @@ export async function POST(request: NextRequest) {
 // Process behavior events and generate adaptations
 async function processEvents(
   supabase: any,
-  events: BehaviorEvent[],
-  request: NextRequest
+  events: BehaviorEvent[]
 ): Promise<TrackingAPIResponse> {
   const sessionId = events[0]?.sessionId
   
@@ -186,7 +185,7 @@ async function getUserProfile(
 async function updateUserProfile(
   supabase: any,
   sessionId: string,
-  events: BehaviorEvent[],
+  _events: BehaviorEvent[],
   existingProfile?: UserProfile
 ): Promise<UserProfile> {
   // Get all events for this session for comprehensive analysis
@@ -246,7 +245,6 @@ async function updateUserProfile(
 function analyzeBehaviorCharacteristics(events: BehaviorEvent[]) {
   const focusEvents = events.filter(e => e.eventType === 'focus')
   const keyEvents = events.filter(e => e.eventType === 'key_press')
-  const mouseEvents = events.filter(e => e.eventType === 'mouse_move')
   
   // Calculate average field focus time
   const averageFieldFocusTime = focusEvents.length > 0 
@@ -259,7 +257,7 @@ function analyzeBehaviorCharacteristics(events: BehaviorEvent[]) {
   // Estimate typing speed
   const typingSpeed = keyEvents.length > 1
     ? (keyEvents.length / (
-        (keyEvents[keyEvents.length - 1].timestamp - keyEvents[0].timestamp) / 60000
+        ((keyEvents[keyEvents.length - 1]?.timestamp || 0) - (keyEvents[0]?.timestamp || 0)) / 60000
       )) || 0
     : 0
 
@@ -299,8 +297,8 @@ function analyzeNavigationStyle(events: BehaviorEvent[]): 'linear' | 'jumping' |
   let searches = 0
   
   for (let i = 1; i < focusEvents.length; i++) {
-    const current = focusEvents[i].fieldName
-    const previous = focusEvents[i - 1].fieldName
+    const current = focusEvents[i]?.fieldName
+    const previous = focusEvents[i - 1]?.fieldName
     
     // Simple heuristic: if field names suggest skipping or going backwards
     if (current && previous && current !== previous) {
@@ -318,10 +316,10 @@ function analyzeNavigationStyle(events: BehaviorEvent[]): 'linear' | 'jumping' |
 }
 
 // Calculate confidence score for behavioral classification
-function calculateConfidenceScore(events: BehaviorEvent[], behaviorType: string): number {
+function calculateConfidenceScore(events: BehaviorEvent[], _behaviorType: string): number {
   const eventCount = events.length
   const sessionDuration = events.length > 1 
-    ? events[events.length - 1].timestamp - events[0].timestamp 
+    ? (events[events.length - 1]?.timestamp || 0) - (events[0]?.timestamp || 0)
     : 0
 
   // Base confidence on number of events and session duration
@@ -331,7 +329,7 @@ function calculateConfidenceScore(events: BehaviorEvent[], behaviorType: string)
   return Math.round(confidence * 100) / 100 // Round to 2 decimal places
 }
 
-// Generate form adaptations based on user behavior using ML
+// Generate form adaptations using separate ML inference API
 async function generateAdaptations(
   supabase: any,
   sessionId: string,
@@ -354,60 +352,53 @@ async function generateAdaptations(
       const formEvents = events.filter(e => e.formId === formId)
       
       try {
-        // Get ML manager with edge-compatible configuration
-        const mlManager = getMLManager({
-          modelBasePath: '/models',
-          enableGPU: false, // Disabled for Edge Runtime compatibility
-          maxAdaptationsPerSession: 10,
-          confidenceThreshold: 0.3,
-          debugging: process.env.NODE_ENV === 'development',
+        // Create form context for ML inference
+        const formContext = {
+          formId,
+          deviceType: determineDeviceType(events[0]?.userAgent || ''),
+          formElements: await getFormElementsInfo(supabase, formId),
+          currentAdaptations: await getCurrentAdaptations(supabase, sessionId, formId),
+          sessionStartTime: events[0]?.timestamp || Date.now(),
+        }
+
+        // Call separate ML inference API (Node.js runtime)
+        const mlResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/ml-inference`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+            events: formEvents,
+            userProfile,
+            formContext,
+          }),
         })
 
-        // Try to initialize ML manager 
-        await mlManager.initialize()
-
-        // Check if ML is actually working
-        if (mlManager.getStatus().initialized && mlManager.getStatus().mlEngine.initialized) {
-          // Create form context
-          const formContext = {
-            deviceType: determineDeviceType(events[0]?.userAgent || ''),
-            formElements: await getFormElementsInfo(supabase, formId),
-            currentAdaptations: await getCurrentAdaptations(supabase, sessionId, formId),
-            sessionStartTime: events[0]?.timestamp || Date.now(),
+        if (mlResponse.ok) {
+          const mlResult = await mlResponse.json()
+          
+          if (mlResult.success && mlResult.data.adaptations) {
+            allAdaptations.push(...mlResult.data.adaptations)
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log('ML Inference successful:', {
+                sessionId,
+                formId,
+                adaptationCount: mlResult.data.adaptations.length,
+                mlUsed: mlResult.data.mlUsed,
+              })
+            }
+          } else {
+            throw new Error('ML inference returned no adaptations')
           }
-
-          // Process session with ML
-          const { adaptations, analysis } = await mlManager.processSession(
-            sessionId,
-            formId,
-            formEvents,
-            formContext,
-            userProfile
-          )
-
-          // Store ML analysis for debugging/monitoring
-          if (process.env.NODE_ENV === 'development') {
-            console.log('ML Analysis:', {
-              sessionId,
-              formId,
-              analysis: {
-                userDifficulty: analysis.userDifficulty,
-                engagementLevel: analysis.engagementLevel,
-                completionLikelihood: analysis.completionLikelihood,
-                identifiedPatterns: analysis.identifiedPatterns.map(p => p.type),
-              },
-              adaptationCount: adaptations.length,
-            })
-          }
-
-          allAdaptations.push(...adaptations)
         } else {
-          throw new Error('ML engine not available, using fallback')
+          throw new Error(`ML inference API failed: ${mlResponse.status}`)
         }
 
       } catch (mlError) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('Using rule-based adaptations (ML not available in Edge Runtime)')
+          console.log('ML processing failed, falling back to rule-based:', mlError)
         }
         
         // Fallback to simple rule-based adaptations
@@ -428,12 +419,18 @@ async function generateAdaptations(
       const { error } = await supabase
         .from('adaptations')
         .insert(allAdaptations.map(adaptation => ({
+          id: adaptation.id,
           session_id: adaptation.sessionId,
           form_id: adaptation.formId,
           adaptation_type: adaptation.adaptationType,
+          confidence: adaptation.confidence,
           config: adaptation.parameters || adaptation.config || {},
-          applied_at: new Date(adaptation.appliedAt).getTime(),
-          performance_impact: adaptation.metadata || {},
+          applied_at: typeof adaptation.appliedAt === 'string' 
+            ? new Date(adaptation.appliedAt).toISOString()
+            : new Date(adaptation.appliedAt).toISOString(),
+          is_active: adaptation.isActive ?? true,
+          description: adaptation.description,
+          metadata: adaptation.metadata || {},
         })))
 
       if (error) {
@@ -458,7 +455,7 @@ function determineDeviceType(userAgent: string): string {
 }
 
 // Helper function to get form elements information
-async function getFormElementsInfo(supabase: any, formId: string) {
+async function getFormElementsInfo(_supabase: any, _formId: string) {
   // In a real implementation, this would query form metadata
   // For now, return default structure
   return {
@@ -495,7 +492,7 @@ async function generateFallbackAdaptations(
   sessionId: string,
   formId: string,
   events: BehaviorEvent[],
-  userProfile: UserProfile,
+  _userProfile: UserProfile,
   quickInsights: ReturnType<typeof getQuickInsights>
 ): Promise<FormAdaptation[]> {
   const adaptations: FormAdaptation[] = []
@@ -513,6 +510,14 @@ async function generateFallbackAdaptations(
         parameters: {
           initialFields: 3,
           strategy: 'efficiency',
+        },
+        config: {
+          progressiveDisclosure: {
+            fieldsToReveal: [],
+            triggerConditions: ['field_completion'],
+            initialFields: 3,
+            strategy: 'efficiency',
+          }
         },
         cssChanges: {},
         jsChanges: '',
@@ -537,6 +542,15 @@ async function generateFallbackAdaptations(
           enableRealTimeValidation: true,
           enableInlineHelp: true,
         },
+        config: {
+          errorPrevention: {
+            fieldName: '',
+            validationRules: [],
+            helpText: 'Need help with this field?',
+            enableRealTimeValidation: true,
+            enableInlineHelp: true,
+          }
+        },
         cssChanges: {},
         jsChanges: '',
         appliedAt: timestamp,
@@ -559,6 +573,12 @@ async function generateFallbackAdaptations(
         parameters: {
           showProgress: true,
           confirmationMessages: true,
+        },
+        config: {
+          completionGuidance: {
+            showProgress: true,
+            confirmationMessages: true,
+          }
         },
         cssChanges: {},
         jsChanges: '',
@@ -585,6 +605,15 @@ async function generateFallbackAdaptations(
       parameters: {
         mobileOptimized: true,
         reducedFields: true,
+      },
+      config: {
+        contextSwitching: {
+          showFields: [],
+          hideFields: [],
+          conditions: { deviceType: 'mobile' },
+          mobileOptimized: true,
+          reducedFields: true,
+        }
       },
       cssChanges: {},
       jsChanges: '',
