@@ -161,10 +161,7 @@ Add to your forms:
 </script>
 ```
 
-## Monitoring & Debugging
-
-### Vercel Analytics
-Enable in Vercel dashboard for performance monitoring.
+## Monitoring & Security
 
 ### Logs
 ```bash
@@ -175,99 +172,28 @@ vercel logs
 vercel logs --follow
 ```
 
-### Debug Mode
-Set `NEXT_PUBLIC_DEBUG_MODE=true` for detailed logging.
-
-## Performance Optimization
-
-### Edge Functions
-All API routes run on Vercel Edge Runtime for:
-- Global distribution
-- Sub-50ms latency
-- Auto-scaling
-
-### Caching Strategy
-- Client script: 24h cache with stale-while-revalidate
-- API responses: No cache for real-time data
-- Static assets: Optimized via Vercel CDN
-
-## Security Configuration
-
-### CORS
-Configured in `vercel.json` for cross-origin requests.
-
-### Environment Security
-- Sensitive keys in environment variables only
-- Client-side keys properly scoped
+### Security
+- CORS configured in `vercel.json`
+- Environment variables for sensitive data only
 - Service role key server-side only
-
-## Scaling Considerations
-
-### Database
-- Supabase auto-scales up to your plan limits
-- Consider connection pooling for high traffic
-- Monitor real-time connections
-
-### Edge Functions
-- Auto-scale with Vercel's infrastructure
-- No cold starts on Edge Runtime
-- Global distribution included
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Build Failures**
-   ```bash
-   npm run type-check
-   npm run lint
-   ```
+1. **Build Failures**: Run `npm run type-check && npm run lint`
+2. **Environment Variables**: Check Vercel dashboard and Supabase settings
+3. **Database Issues**: Verify URL/keys and ensure migrations are applied
+4. **Real-time Issues**: Enable real-time in Supabase and check WebSocket connections
 
-2. **Environment Variable Issues**
-   - Check Vercel dashboard configuration
-   - Ensure all required variables are set
-   - Verify Supabase project settings
-
-3. **Database Connection Issues**
-   - Verify Supabase URL and keys
-   - Check RLS policies
-   - Ensure migrations are applied
-
-4. **Real-time Issues**
-   - Verify real-time is enabled in Supabase
-   - Check WebSocket connections
-   - Monitor Edge Function logs
-
-### Support
-- Check [Vercel Documentation](https://vercel.com/docs)
-- Check [Supabase Documentation](https://supabase.com/docs)
-- Open issue on GitHub repository
-
-## Rollback Strategy
-
-### Quick Rollback
+### Rollback
 ```bash
-# Rollback to previous deployment
+# Rollback deployment
 vercel rollback
-```
 
-### Database Rollback
-```bash
-# Rollback migrations if needed
+# Reset database if needed
 supabase db reset
 ```
-
-## Maintenance
-
-### Regular Updates
-- Monitor dependency security updates
-- Update Supabase CLI regularly
-- Keep Vercel CLI updated
-
-### Backup Strategy
-- Supabase provides automated backups
-- Export critical data regularly
-- Document configuration changes
 
 ---
 
