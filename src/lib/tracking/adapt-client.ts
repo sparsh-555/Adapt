@@ -16,14 +16,18 @@ import {
   createAdaptError,
   isSSR
 } from '@/utils'
+import { EnhancedBehaviorTracker } from './enhanced-tracker'
+import { EnhancedDOMAdapter } from '../adaptation/enhanced-dom-adapter'
+import { SessionManager } from '../session/session-manager'
 
 /**
  * Main Adapt client class for behavior tracking and form optimization
  */
 export class AdaptClientImpl implements AdaptClient {
   private config: AdaptConfig | null = null
-  private tracker: BehaviorTracker | null = null
-  private adapter: DOMAdapter | null = null
+  private tracker: EnhancedBehaviorTracker | null = null
+  private adapter: EnhancedDOMAdapter | null = null
+  private sessionManager: SessionManager | null = null
   private isInitialized = false
   private sessionId: string
 
@@ -66,8 +70,9 @@ export class AdaptClientImpl implements AdaptClient {
       },
     }
 
-    this.tracker = new BehaviorTracker(this.config, this.sessionId)
-    this.adapter = new DOMAdapter(this.config)
+    this.tracker = new EnhancedBehaviorTracker(this.config, this.sessionId)
+    this.adapter = new EnhancedDOMAdapter(this.config)
+    this.sessionManager = new SessionManager(this.sessionId, this.config.debugging)
 
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {

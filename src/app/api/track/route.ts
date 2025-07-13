@@ -329,7 +329,7 @@ function calculateConfidenceScore(events: BehaviorEvent[], _behaviorType: string
   return Math.round(confidence * 100) / 100 // Round to 2 decimal places
 }
 
-// Generate form adaptations using separate ML inference API
+// Generate form adaptations using dual-layer ML architecture
 async function generateAdaptations(
   supabase: any,
   sessionId: string,
@@ -337,11 +337,14 @@ async function generateAdaptations(
   userProfile: UserProfile
 ): Promise<FormAdaptation[]> {
   try {
-    // Get quick insights for immediate decision making
-    const quickInsights = getQuickInsights(events)
+    // Initialize Edge ML Engine for immediate inference
+    const edgeML = new EdgeMLEngine({
+      confidenceThreshold: 0.3,
+      debugging: process.env.NODE_ENV === 'development'
+    })
     
     // Only generate adaptations if we have sufficient data
-    if (events.length < 3) {
+    if (events.length < 2) {
       return []
     }
 
@@ -352,53 +355,69 @@ async function generateAdaptations(
       const formEvents = events.filter(e => e.formId === formId)
       
       try {
-        // Create form context for ML inference
-        const formContext = {
-          formId,
-          deviceType: determineDeviceType(events[0]?.userAgent || ''),
-          formElements: await getFormElementsInfo(supabase, formId),
-          currentAdaptations: await getCurrentAdaptations(supabase, sessionId, formId),
-          sessionStartTime: events[0]?.timestamp || Date.now(),
-        }
-
-        // Call separate ML inference API (Node.js runtime)
-        const mlResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/ml-inference`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        // EDGE LAYER: Immediate ML inference (<5ms target)
+        const startTime = performance.now()
+        
+        // Extract features for edge ML
+        const edgeFeatures = edgeML.extractFeatures(formEvents, userProfile)
+        
+        // Run lightweight ML prediction
+        const edgePrediction = edgeML.predict(edgeFeatures)
+        
+        // Generate immediate adaptations
+        const edgeAdaptations = edgeML.generateAdaptations(edgePrediction, sessionId, formId)
+        
+        const edgeTime = performance.now() - startTime
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Edge ML completed:', {
             sessionId,
-            events: formEvents,
-            userProfile,
-            formContext,
-          }),
-        })
-
-        if (mlResponse.ok) {
-          const mlResult = await mlResponse.json()
-          
-          if (mlResult.success && mlResult.data.adaptations) {
-            allAdaptations.push(...mlResult.data.adaptations)
-            
-            if (process.env.NODE_ENV === 'development') {
-              console.log('ML Inference successful:', {
-                sessionId,
-                formId,
-                adaptationCount: mlResult.data.adaptations.length,
-                mlUsed: mlResult.data.mlUsed,
-              })
-            }
-          } else {
-            throw new Error('ML inference returned no adaptations')
-          }
-        } else {
-          throw new Error(`ML inference API failed: ${mlResponse.status}`)
+            formId,
+            userType: edgePrediction.userType,
+            confidence: edgePrediction.confidence,
+            adaptationCount: edgeAdaptations.length,
+            processingTime: `${Math.round(edgeTime)}ms`,
+            mlFeatures: edgePrediction.mlFeatures
+          })
         }
+        
+        // Convert edge adaptations to full FormAdaptation format
+        const formattedAdaptations: FormAdaptation[] = edgeAdaptations.map(adaptation => ({
+          id: adaptation.id,
+          sessionId: adaptation.sessionId,
+          formId: adaptation.formId,
+          adaptationType: adaptation.adaptationType,
+          confidence: adaptation.confidence,
+          parameters: {
+            ...adaptation.parameters,
+            // Include data for client-side ML enhancement
+            enhanceWithClientML: true,
+            mlFeatures: edgePrediction.mlFeatures,
+            edgeUserType: edgePrediction.userType,
+            edgeConfidence: edgePrediction.confidence,
+            adaptationScores: edgePrediction.adaptationScores,
+          },
+          config: generateConfigFromParameters(adaptation.adaptationType, adaptation.parameters),
+          cssChanges: {},
+          jsChanges: '',
+          appliedAt: adaptation.appliedAt,
+          isActive: true,
+          description: `Edge ML: ${adaptation.adaptationType} for ${edgePrediction.userType} user`,
+          metadata: {
+            source: 'edge_ml',
+            userType: edgePrediction.userType,
+            edgeProcessingTime: edgeTime,
+            mlFeatures: edgePrediction.mlFeatures,
+            adaptationScores: edgePrediction.adaptationScores,
+            version: '2.0',
+          },
+        }))
+        
+        allAdaptations.push(...formattedAdaptations)
 
       } catch (mlError) {
         if (process.env.NODE_ENV === 'development') {
-          console.log('ML processing failed, falling back to rule-based:', mlError)
+          console.log('Edge ML processing failed, falling back to rule-based:', mlError)
         }
         
         // Fallback to simple rule-based adaptations
@@ -406,8 +425,7 @@ async function generateAdaptations(
           sessionId,
           formId,
           formEvents,
-          userProfile,
-          quickInsights
+          userProfile
         )
         
         allAdaptations.push(...fallbackAdaptations)
@@ -444,6 +462,43 @@ async function generateAdaptations(
   } catch (error) {
     console.error('Adaptation generation failed:', error)
     return []
+  }
+}
+
+// Generate config from parameters for backwards compatibility
+function generateConfigFromParameters(adaptationType: string, parameters: any) {
+  switch (adaptationType) {
+    case 'progressive_disclosure':
+      return {
+        progressiveDisclosure: {
+          fieldsToReveal: [],
+          triggerConditions: ['field_completion'],
+          initialFields: parameters.initialFields || 3,
+          strategy: parameters.strategy || 'step_by_step',
+        }
+      }
+    case 'error_prevention':
+      return {
+        errorPrevention: {
+          fieldName: '',
+          validationRules: [],
+          helpText: 'Need help with this field?',
+          enableRealTimeValidation: parameters.enableRealTimeValidation || false,
+          enableInlineHelp: parameters.enableInlineHelp || false,
+        }
+      }
+    case 'context_switching':
+      return {
+        contextSwitching: {
+          showFields: [],
+          hideFields: [],
+          conditions: { deviceType: 'mobile' },
+          mobileOptimized: parameters.mobileOptimized || false,
+          enableTooltips: parameters.enableTooltips || false,
+        }
+      }
+    default:
+      return {}
   }
 }
 
@@ -526,7 +581,7 @@ async function generateFallbackAdaptations(
         description: 'Progressive disclosure for fast users',
         metadata: {
           source: 'fallback',
-          userType: quickInsights.userType,
+          userType: userType,
         },
       })
       break
@@ -558,7 +613,7 @@ async function generateFallbackAdaptations(
         description: 'Error prevention for struggling users',
         metadata: {
           source: 'fallback',
-          userType: quickInsights.userType,
+          userType: userType,
         },
       })
       break
@@ -587,7 +642,7 @@ async function generateFallbackAdaptations(
         description: 'Completion guidance for careful users',
         metadata: {
           source: 'fallback',
-          userType: quickInsights.userType,
+          userType: userType,
         },
       })
       break
