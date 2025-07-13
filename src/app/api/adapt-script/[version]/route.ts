@@ -25,9 +25,9 @@ export async function OPTIONS() {
 // Serve the Adapt client script
 export async function GET(
   request: NextRequest,
-  { params }: { params: { version: string } }
+  { params }: { params: Promise<{ version: string }> }
 ) {
-  const { version } = params
+  const { version } = await params
   
   // Validate version format (e.g., v1.0.0, latest)
   if (!isValidVersion(version)) {

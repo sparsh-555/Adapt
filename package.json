@@ -22,7 +22,8 @@
     "supabase:status": "npx supabase status",
     "vercel:env": "vercel env pull .env.local",
     "vercel:logs": "vercel logs",
-    "setup": "npm install && cp .env.example .env.local"
+    "setup": "npm install && cp .env.example .env.local",
+    "postinstall": "echo 'Note: Deprecation warnings for boolean@3.2.0 and node-domexception@1.0.0 are from transitive dependencies and can be safely ignored.'"
   },
   "dependencies": {
     "next": "^15.1.8",
@@ -68,7 +69,7 @@
     "conversion-optimization",
     "nextjs",
     "supabase",
-    "tensorflow"
+    "onnx"
   ],
   "author": "Sparsh Jain",
   "license": "MIT"

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // External packages for server components (updated config)
-  serverExternalPackages: ['@tensorflow/tfjs-node'],
+  // External packages for server components (updated for ONNX Runtime)
+  serverExternalPackages: ['onnxruntime-node'],
   
   // CDN script delivery optimization
   headers: async () => [
@@ -62,12 +62,14 @@ const nextConfig = {
       }
     }
     
-    // TensorFlow.js optimizations
+    // ONNX Runtime optimizations for Edge Runtime compatibility
     config.resolve.fallback = {
       ...config.resolve.fallback,
       fs: false,
       path: false,
       crypto: false,
+      stream: false,
+      util: false,
     }
     
     return config
